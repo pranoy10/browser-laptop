@@ -433,7 +433,7 @@ function registerPermissionHandler (session, partition) {
     let tempSettings
     if (requestingUrl === appUrlUtil.getBraveExtIndexHTML() || isPDFOrigin || isBraveOrigin) {
       // lookup, display and store site settings by the origin alias
-      origin = isPDFOrigin ? 'PDF Viewer' : 'Brave Browser'
+      mainFrameOrigin = isPDFOrigin ? 'PDF Viewer' : 'Brave Browser'
       // display on all tabs
       requestingUrl = null
       // Lookup by exact host pattern match since 'Brave Browser' is not
@@ -445,7 +445,7 @@ function registerPermissionHandler (session, partition) {
       // "Allow null to open an external application?"
       // This covers an edge case where you open a magnet link tab, then disable Torrent Viewer
       // and restart Brave. I don't think it needs localization. See 'Brave Browser' above.
-      origin = 'Magnet URL'
+      mainFrameOrigin = 'Magnet URL'
     } else {
       // Strip trailing slash
       mainFrameOrigin = getOrigin(mainFrameOrigin)
