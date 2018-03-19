@@ -394,7 +394,7 @@ function registerPermissionHandler (session, partition) {
   const isPrivate = module.exports.isPrivate(partition)
   // Keep track of per-site permissions granted for this session.
   let permissions = null
-  session.setPermissionRequestHandler((origin, mainFrameUrl, permissionTypes, muonCb) => {
+  session.setPermissionRequestHandler((mainFrameOrigin, requestingUrl, permissionTypes, muonCb) => {
     if (!permissions) {
       permissions = {
         media: {
@@ -427,20 +427,20 @@ function registerPermissionHandler (session, partition) {
     // TODO(bridiver) - the permission handling should be converted to an action because we should never call `appStore.getState()`
     // Check whether there is a persistent site setting for this host
     const appState = appStore.getState()
-    const isBraveOrigin = origin.startsWith(`chrome-extension://${config.braveExtensionId}/`)
-    const isPDFOrigin = origin.startsWith(`${pdfjsOrigin}/`)
+    const isBraveOrigin = mainFrameOrigin.startsWith(`chrome-extension://${config.braveExtensionId}/`)
+    const isPDFOrigin = mainFrameOrigin.startsWith(`${pdfjsOrigin}/`)
     let settings
     let tempSettings
-    if (mainFrameUrl === appUrlUtil.getBraveExtIndexHTML() || isPDFOrigin || isBraveOrigin) {
+    if (requestingUrl === appUrlUtil.getBraveExtIndexHTML() || isPDFOrigin || isBraveOrigin) {
       // lookup, display and store site settings by the origin alias
       origin = isPDFOrigin ? 'PDF Viewer' : 'Brave Browser'
       // display on all tabs
-      mainFrameUrl = null
+      requestingUrl = null
       // Lookup by exact host pattern match since 'Brave Browser' is not
       // a parseable URL
-      settings = siteSettings.getSiteSettingsForHostPattern(appState.get('siteSettings'), origin)
-      tempSettings = siteSettings.getSiteSettingsForHostPattern(appState.get('temporarySiteSettings'), origin)
-    } else if (mainFrameUrl.startsWith('magnet:')) {
+      settings = siteSettings.getSiteSettingsForHostPattern(appState.get('siteSettings'), mainFrameOrigin)
+      tempSettings = siteSettings.getSiteSettingsForHostPattern(appState.get('temporarySiteSettings'), mainFrameOrigin)
+    } else if (requestingUrl.startsWith('magnet:')) {
       // Show "Allow magnet URL to open an external application?", instead of
       // "Allow null to open an external application?"
       // This covers an edge case where you open a magnet link tab, then disable Torrent Viewer
@@ -448,14 +448,14 @@ function registerPermissionHandler (session, partition) {
       origin = 'Magnet URL'
     } else {
       // Strip trailing slash
-      origin = getOrigin(origin)
-      settings = siteSettings.getSiteSettingsForURL(appState.get('siteSettings'), origin)
-      tempSettings = siteSettings.getSiteSettingsForURL(appState.get('temporarySiteSettings'), origin)
+      mainFrameOrigin = getOrigin(mainFrameOrigin)
+      settings = siteSettings.getSiteSettingsForURL(appState.get('siteSettings'), mainFrameOrigin)
+      tempSettings = siteSettings.getSiteSettingsForURL(appState.get('temporarySiteSettings'), mainFrameOrigin)
     }
 
     let response = []
 
-    if (origin == null) {
+    if (mainFrameOrigin == null) {
       response = new Array(permissionTypes.length)
       response.fill(false, 0, permissionTypes.length)
       muonCb(response)
@@ -471,7 +471,7 @@ function registerPermissionHandler (session, partition) {
         response.push(false)
       } else if (permission === 'fullscreen' &&
         // The Torrent Viewer extension is always allowed to show fullscreen media
-        origin.startsWith('chrome-extension://' + config.torrentExtensionId)) {
+        mainFrameOrigin.startsWith('chrome-extension://' + config.torrentExtensionId)) {
         response.push(true)
       } else if (permission === 'fullscreen' && alwaysAllowFullscreen) {
         // Always allow fullscreen if setting is ON
@@ -497,7 +497,7 @@ function registerPermissionHandler (session, partition) {
 
       // Display 'Brave Browser' if the origin is null; ex: when a mailto: link
       // is opened in a new tab via right-click
-      const message = locale.translation('permissionMessage').replace(/{{\s*host\s*}}/, mainFrameUrl || 'Brave Browser').replace(/{{\s*permission\s*}}/, permissions[permission].action)
+      const message = locale.translation('permissionMessage').replace(/{{\s*host\s*}}/, requestingUrl || 'Brave Browser').replace(/{{\s*permission\s*}}/, permissions[permission].action)
 
       // If this is a duplicate, clear the previous callback and use the new one
       if (permissionCallbacks[message]) {
@@ -511,9 +511,9 @@ function registerPermissionHandler (session, partition) {
             {text: locale.translation('deny')},
             {text: locale.translation('allow')}
           ],
-          frameOrigin: getOrigin(origin),
+          frameOrigin: getOrigin(mainFrameOrigin),
           options: {
-            persist: !!origin,
+            persist: !!requestingUrl,
             index: i
           },
           message
@@ -530,7 +530,7 @@ function registerPermissionHandler (session, partition) {
           response[index] = result
           if (persist) {
             // remember site setting for this host
-            appActions.changeSiteSetting(origin, permission + 'Permission', result, isPrivate)
+            appActions.changeSiteSetting(requestingUrl, permission + 'Permission', result, isPrivate)
           }
           if (response.length === permissionTypes.length) {
             permissionCallbacks[message] = null
