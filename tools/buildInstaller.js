@@ -105,6 +105,12 @@ if (isDarwin) {
   const wvBundleSig = wvResources + '/Brave Framework.sig'
   const wvPlugin = buildDir + `/${appName}.app/Contents/Frameworks/Brave Framework.framework/Libraries/WidevineCdm/_platform_specific/mac_x64/widevinecdmadapter.plugin`
   // choose pkg or dmg based on channel
+
+  const torURL = 'https://s3.us-east-2.amazonaws.com/demo-tor-binaries/tor-mac'
+  const torPath = buildDir + `/${appName}.app/Contents/Resources/extensions/tor`
+  const torSigURL = 'https://s3.us-east-2.amazonaws.com/demo-tor-binaries/tor-mac.sig'
+  const torSigPath = '/tmp/tor.sig'
+
   cmds = [
     // Remove old
     'rm -f ' + outDir + `/${appName}.dmg`,
@@ -130,6 +136,11 @@ if (isDarwin) {
       `--prepackaged="${buildDir}/${appName}.app" ` +
       `--config=res/${channel}/builderConfig.json ` +
       '--publish=never',
+
+    // Tor Binary
+    'curl -o ' + torPath + ' ' + torURL,
+    'curl -o ' + torSigPath + ' ' + torSigURL,
+    'gpg --verify ' + torSigPath + ' ' + torPath,
 
     // Create an update zip
     'ditto -c -k --sequesterRsrc --keepParent ' + buildDir + `/${appName}.app dist/${appName}-` + VersionInfo.braveVersion + '.zip'
