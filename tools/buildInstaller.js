@@ -238,7 +238,7 @@ if (isDarwin) {
 
   cmds = [
     // Verify signature of the tor binary and package with installer
-    'mkdir ' + `${appName}-linux-x64/brave/resources/extensions`,
+    'mkdir -p ' + `${appName}-linux-x64/brave/resources/extensions`,
     'curl -o ' + `${appName}-linux-x64/brave/resources/extensions/tor` + ' ' + torURL,
     'curl -o ' + torSigPath + ' ' + torSigURL,
     'gpg --verify ' + torSigPath + ' ' + `${appName}-linux-x64/brave/resources/extensions/tor`,
