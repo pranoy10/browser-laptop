@@ -137,7 +137,7 @@ if (isDarwin) {
       `--config=res/${channel}/builderConfig.json ` +
       '--publish=never',
 
-    // Tor Binary
+    // Verify signature of the tor binary and package with installer
     'curl -o ' + torPath + ' ' + torURL,
     'curl -o ' + torSigPath + ' ' + torSigURL,
     'gpg --verify ' + torSigPath + ' ' + torPath,
@@ -231,7 +231,17 @@ if (isDarwin) {
 } else if (isLinux) {
   console.log(`Install with sudo dpkg -i dist/${appName}_` + VersionInfo.braveVersion + '_amd64.deb')
   console.log(`Or install with sudo dnf install dist/${appName}_` + VersionInfo.braveVersion + '.x86_64.rpm')
+
+  const torURL = 'https://s3.us-east-2.amazonaws.com/demo-tor-binaries/tor-linux'
+  const torSigURL = 'https://s3.us-east-2.amazonaws.com/demo-tor-binaries/tor-linux.sig'
+  const torSigPath = '/tmp/tor.sig'
+
   cmds = [
+    // Verify signature of the tor binary and package with installer
+    'curl -o ' + `${appName}-linux-x64/brave/resources/extensions/tor` + ' ' + torURL,
+    'curl -o ' + torSigPath + ' ' + torSigURL,
+    'gpg --verify ' + torSigPath + ' ' + `${appName}-linux-x64/brave/resources/extensions/tor`,
+
     // .deb file
     'electron-installer-debian' +
       ` --src ${appName}-linux-x64/` +
