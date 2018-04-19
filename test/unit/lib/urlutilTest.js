@@ -164,7 +164,20 @@ describe('urlutil', function () {
     it('calls prependScheme', function () {
       assert.equal(urlUtil.getUrlFromInput('/file/path/to/file'), 'file:///file/path/to/file')
     })
+    it('seaches for dog cat instead of the link itself', function(){
+      assert.equal(urlUtil.isNotURL('https://www.google.ca/search?q=dog cat'), false)
+    })
+    it('seaches for dog cat instead of the link itself', function(){
+      assert.equal(urlUtil.isNotURL(' https://www.google.ca/search?q=dog cat '), false)
+    })
+    it('seaches for dog cat instead of the string itself', function(){
+      assert.equal(urlUtil.isNotURL('/home/pranoy/Desktop/dog cat.txt'), false)
+    })
+    it('seaches for dog cat instead of the string itself', function(){
+      assert.equal(urlUtil.isNotURL(' /home/pranoy/Desktop/dog cat.txt'), false)
+    })
   })
+
 
   describe('isURL', function () {
     it('returns !isNotURL', function () {
